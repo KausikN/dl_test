@@ -120,7 +120,6 @@ def Model_Train(model, inputs, n_epochs, wandb_data, **params):
     Train Model
     '''
     OUTPUT_LABEL_ENCODING = (model.loss.name == "sparse_categorical_crossentropy")
-    print(OUTPUT_LABEL_ENCODING, model.loss.name)
     # Get Data
     DATASET_ENCODED = inputs["dataset_encoded"]
     dataset_train_encoder_input = np.argmax(DATASET_ENCODED["train"]["encoder_input"], axis=-1)
@@ -260,8 +259,10 @@ def Model_Inference_GetEncoderDecoder(model, **params):
         name = str(layer.name)
         if name.startswith("encoder_block_"):
             li = int(name.lstrip("encoder_block_").split("_")[0])
-            _, enc_h, enc_c = layer.output
-            encoder_data[li] = [enc_h, enc_c]
+            # _, enc_h, enc_c = layer.output
+            # encoder_data[li] = [enc_h, enc_c]
+            out_data = layer.output
+            encoder_data[li] = out_data[1:]
 
     for i in list(sorted(encoder_data.keys())):
         encoder_states.extend(encoder_data[i])
@@ -293,20 +294,27 @@ def Model_Inference_GetEncoderDecoder(model, **params):
             if name.startswith("decoder_block_"):
                 li = int(name.lstrip("decoder_block_").split("_")[0])
                 n_cells = layer.output_shape[0][-1]
-                dec_h = Input(shape=(n_cells,))
-                dec_c = Input(shape=(n_cells,))
-                decoder_data[li] = [layer, dec_h, dec_c]
+                # dec_h = Input(shape=(n_cells,))
+                # dec_c = Input(shape=(n_cells,))
+                # decoder_data[li] = [layer, dec_h, dec_c]
+                decoder_data[li] = [layer]
+                for i in range(len(encoder_data[li])):
+                    decoder_data[li].append(Input(shape=(n_cells,)))
     # Decoder Layers
     for i in list(sorted(decoder_data.keys())):
         decoders.append(decoder_data[i][0])
-        decoder_states.append([decoder_data[i][1], decoder_data[i][2]])
+        # decoder_states.append([decoder_data[i][1], decoder_data[i][2]])
+        decoder_states.append(decoder_data[i][1:])
 
     decoder_outputs = decoder_embedding_layer(decoder_inputs)
     decoder_states_outputs = []
 
     for i in range(len(decoders)):
-        decoder_outputs, h, c = decoders[i](decoder_outputs, initial_state=decoder_states[i])
-        decoder_states_outputs.extend([h, c])
+        # decoder_outputs, h, c = decoders[i](decoder_outputs, initial_state=decoder_states[i])
+        # decoder_states_outputs.extend([h, c])
+        out_data = decoders[i](decoder_outputs, initial_state=decoder_states[i])
+        decoder_outputs = out_data[0]
+        decoder_states_outputs.extend(out_data[1:])
 
     if params["use_attention"]:
         # Attention Layer
@@ -335,6 +343,9 @@ def Model_Inference_Transliterate(words, model_encoder, model_decoder, **params)
     batch_size = words.shape[0]
     # Encode the input string
     encoded_states = model_encoder.predict(words)
+    encoded_states = np.array(encoded_states)
+    if encoded_states.ndim == 2:
+        encoded_states = np.reshape(encoded_states, (1, encoded_states.shape[0], encoded_states.shape[1]))
 
     target_sequence = np.zeros((batch_size, 1, DATASET_DAKSHINA_TAMIL_UNIQUE_CHARS["target"]+1))
     # Set SOS
@@ -345,6 +356,9 @@ def Model_Inference_Transliterate(words, model_encoder, model_decoder, **params)
     for i in range(DATASET_DAKSHINA_TAMIL_MAX_CHARS["target"]):
         decoder_inputs = [target_sequence]
         for s in encoded_states: decoder_inputs.append(s)
+        # print(len(decoder_inputs))
+        # print([decoder_inputs[j].shape for j in range(len(decoder_inputs))])
+        
         # print("Decoder Inp:", target_sequence.shape)
         decoded_data = model_decoder.predict(decoder_inputs)
         output_tokens = decoded_data[0]

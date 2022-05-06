@@ -6,7 +6,8 @@ Attention Block
 import tensorflow as tf
 import os
 from tensorflow.python.keras.layers import Layer
-from tensorflow.python.keras import backend as K
+# from tensorflow.python.keras import backend as K
+from tensorflow..python.keras import backend as K
 
 # Main Functions
 class AttentionLayer(Layer):
@@ -21,17 +22,16 @@ class AttentionLayer(Layer):
     def build(self, input_shape):
         assert isinstance(input_shape, list)
         # Create a trainable weight variable for this layer.
-
         self.W_a = self.add_weight(name='W_a',
-                                   shape=tf.TensorShape((input_shape[0][2], input_shape[0][2])),
+                                   shape=tf.TensorShape((input_shape[0][-1], input_shape[0][-1])),
                                    initializer='uniform',
                                    trainable=True)
         self.U_a = self.add_weight(name='U_a',
-                                   shape=tf.TensorShape((input_shape[1][2], input_shape[0][2])),
+                                   shape=tf.TensorShape((input_shape[1][-1], input_shape[0][-1])),
                                    initializer='uniform',
                                    trainable=True)
         self.V_a = self.add_weight(name='V_a',
-                                   shape=tf.TensorShape((input_shape[0][2], 1)),
+                                   shape=tf.TensorShape((input_shape[0][-1], 1)),
                                    initializer='uniform',
                                    trainable=True)
 
@@ -57,7 +57,9 @@ class AttentionLayer(Layer):
             assert isinstance(states, list) or isinstance(states, tuple), assert_msg
 
             """ Some parameters required for shaping tensors"""
-            en_seq_len, en_hidden = encoder_out_seq.shape[1], encoder_out_seq.shape[2]
+            print("ENERGY:", encoder_out_seq.shape)
+            en_seq_len, en_hidden = encoder_out_seq.shape[1], encoder_out_seq.shape[-1]
+            # en_seq_len, en_hidden = encoder_out_seq.shape[1], encoder_out_seq.shape[2]
             de_hidden = inputs.shape[-1]
 
             """ Computing S.Wa where S=[s0, s1, ..., si]"""
@@ -99,7 +101,9 @@ class AttentionLayer(Layer):
             return c_i, [c_i]
 
         fake_state_c = K.sum(encoder_out_seq, axis=1)
-        fake_state_e = K.sum(encoder_out_seq, axis=2)  # <= (batch_size, enc_seq_len, latent_dim
+        print("ENCODER:", encoder_out_seq.shape)
+        fake_state_e = K.sum(encoder_out_seq, axis=-1)
+        # fake_state_e = K.sum(encoder_out_seq, axis=2)  # <= (batch_size, enc_seq_len, latent_dim
 
         """ Computing energy outputs """
         # e_outputs => (batch_size, de_seq_len, en_seq_len)
@@ -117,6 +121,7 @@ class AttentionLayer(Layer):
     def compute_output_shape(self, input_shape):
         """ Outputs produced by the layer """
         return [
-            tf.TensorShape((input_shape[1][0], input_shape[1][1], input_shape[1][2])),
+            tf.TensorShape((input_shape[1][0], input_shape[1][1], input_shape[1][-1])),
+            # tf.TensorShape((input_shape[1][0], input_shape[1][1], input_shape[1][2])),
             tf.TensorShape((input_shape[1][0], input_shape[1][1], input_shape[0][1]))
         ]

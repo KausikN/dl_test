@@ -84,7 +84,8 @@ def Model_EncoderDecoderBlocks(X_shape, Y_shape, Blocks, **params):
         # Attention Layer
         print(encoderData[-1]["output"])
         print(decoderData[-1]["output"])
-        att_output, att_states = AttentionLayer(name="attention")([encoderData[-1]["output"], decoderData[-1]["output"]])
+        att_output, att_states = AttentionLayer(name="attention")([encoderData[-1]["output"], decoderData[-1]["output"]], verbose=True)
+        # att_output, att_states = Attention(name="attention")([encoderData[-1]["output"], decoderData[-1]["output"]])
         # Concat Layer
         decoder_concat_input = Concatenate(axis=-1, name="concat")([decoderData[-1]["output"], att_output])
         # Output Layer

@@ -32,7 +32,8 @@ def Model_Sweep_Run(wandb_data):
     DECODER_N_UNITS = config.decoder_n_units
     ACT_FUNC = config.act_func
     DROPOUT = config.dropout
-    USE_ATTENTION = False
+    USE_ATTENTION = wandb_data["attention"]
+    LOSS_FN = wandb_data["loss_fn"]
 
     print("RUN CONFIG:")
     pprint(config)
@@ -57,7 +58,9 @@ def Model_Sweep_Run(wandb_data):
                 ],
             }, 
             "compile_params": {
-                "loss_fn": CategoricalCrossentropy(),#SparseCategoricalCrossentropy(),
+                "loss_fn": LOSS_FUNCTIONS[LOSS_FN](),
+                # CategoricalCrossentropy(),
+                # SparseCategoricalCrossentropy(),
                 "optimizer": Adam(),
                 "metrics": ["accuracy"]
             }
@@ -153,6 +156,10 @@ def Runner_Train(args):
     '''
     # Load Wandb Data
     WANDB_DATA = json.load(open("config.json", "r"))
+    WANDB_DATA.update({
+        "attention": False,
+        "loss_fn": "categorical_crossentropy" # "categorical_crossentropy", sparse_categorical_crossentropy"
+    })
     # Sweep Setup
     SWEEP_CONFIG = {
         "name": "run-1",

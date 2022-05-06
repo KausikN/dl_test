@@ -29,7 +29,8 @@ def Model_Sweep_Run(config_data):
     DECODER_N_UNITS = config["decoder_n_units"]
     ACT_FUNC = config["act_func"]
     DROPOUT = config["dropout"]
-    USE_ATTENTION = False
+    USE_ATTENTION = config["attention"]
+    LOSS_FN = config["loss_fn"]
 
     print("RUN CONFIG:")
     pprint(config)
@@ -54,7 +55,9 @@ def Model_Sweep_Run(config_data):
                 ],
             }, 
             "compile_params": {
-                "loss_fn": CategoricalCrossentropy(),#SparseCategoricalCrossentropy(),
+                "loss_fn": LOSS_FUNCTIONS[LOSS_FN](),
+                # CategoricalCrossentropy(),
+                # SparseCategoricalCrossentropy(),
                 "optimizer": Adam(),
                 "metrics": ["accuracy"]
             }
@@ -153,7 +156,10 @@ def Runner_Train(args):
             "encoder_n_units": [int(x) for x in args.encoder_n_units.split(",")],
             "decoder_n_units": [int(x) for x in args.decoder_n_units.split(",")],
             "act_func": args.act_func,
-            "dropout": args.dropout
+            "dropout": args.dropout,
+
+            "attention": False,
+            "loss_fn": "categorical_crossentropy"
     }
     # Run
     Model_Sweep_Run(SWEEP_CONFIG)

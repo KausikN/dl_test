@@ -58,7 +58,7 @@ def Model_Sweep_Run(wandb_data):
                 ],
             }, 
             "compile_params": {
-                "loss_fn": LOSS_FN,
+                "loss_fn": LOSS_FUNCTIONS[LOSS_FN](),
                 # CategoricalCrossentropy(),
                 # SparseCategoricalCrossentropy(),
                 "optimizer": Adam(),
@@ -121,3 +121,72 @@ def Model_Sweep_Run(wandb_data):
     wandb.finish()
 
 # Run
+# if __name__ == "__main__":
+#     import traceback
+#     DATASET_PATH_DAKSHINA_TAMIL = "Dataset/dakshina_dataset_v1.0/ta/lexicons/ta.translit.sampled.{}.tsv"
+#     # Load Wandb Data
+#     WANDB_DATA = json.load(open("config.json", "r"))
+#     WANDB_DATA.update({
+#         "attention": False,
+#         "loss_fn": "categorical_crossentropy" # "categorical_crossentropy", sparse_categorical_crossentropy"
+#     })
+#     # Sweep Setup
+#     SWEEP_CONFIG = {
+#         "name": "test-run-1",
+#         "method": "bayes",
+#         "metric": {
+#             "name": "val_accuracy",
+#             "goal": "maximize"
+#         },
+#         "parameters": {
+#             "n_epochs": {
+#                 "values": [10]
+#             },
+#             "batch_size": {
+#                 "values": [128, 256]
+#             },
+
+#             "encoder": {
+#                 "values": ["LSTM"]
+#             },
+#             "decoder": {
+#                 "values": ["LSTM"]
+#             },
+#             "encoder_embedding_size": {
+#                 "values": [64]
+#             },
+#             "decoder_embedding_size": {
+#                 "values": [64]
+#             },
+#             "encoder_n_units": {
+#                 "values": [
+#                     [64],
+#                     [64, 64]
+#                 ]
+#             },
+#             "decoder_n_units": {
+#                 "values": [
+#                     [64],
+#                     [64, 64]
+#                 ]
+#             },
+#             "act_func": {
+#                 "values": ["sigmoid", "tanh"]
+#             },
+#             "dropout": {
+#                 "values": [0.1, 0.2]
+#             }
+#         }
+#     }
+
+#     try:
+#         # Run Sweep
+#         sweep_id = wandb.sweep(SWEEP_CONFIG, project=WANDB_DATA["project_name"], entity=WANDB_DATA["user_name"])
+#         # sweep_id = ""
+#         TRAINER_FUNC = functools.partial(Model_Sweep_Run, wandb_data=WANDB_DATA)
+#         wandb.agent(sweep_id, TRAINER_FUNC, project=WANDB_DATA["project_name"], entity=WANDB_DATA["user_name"], count=1)
+#         # Save Model
+#         # Model_SaveModel(Model_LoadModel(PATH_BESTMODEL), "Models/Model.h5")
+#     except Exception as e:
+#         # exit gracefully, so wandb logs the problem
+#         print(traceback.print_exc())

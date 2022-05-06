@@ -119,6 +119,11 @@ def Model_Sweep_Run(wandb_data):
         "eval_test_inference": eval_test_inference
     })
 
+    print("MODEL TEST:")
+    print("Loss:", loss_test)
+    print("Eval:", eval_test)
+    print("Eval Inference:", eval_test_inference)
+
     # Close Wandb Run
     # run_name = "ep:"+str(N_EPOCHS) + "_" + "bs:"+str(BATCH_SIZE) + "_" + "nf:"+str(N_FILTERS) + "_" + str(DROPOUT)
     # wandb.run.name = run_name

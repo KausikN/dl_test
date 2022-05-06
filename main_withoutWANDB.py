@@ -89,7 +89,10 @@ def Model_Sweep_Run(config_data):
     MODEL = Model_Compile(MODEL, **inputs["model"]["compile_params"])
 
     # Train Model
-    TRAINED_MODEL, TRAIN_HISTORY = Model_Train(MODEL, inputs, N_EPOCHS, {"enable": False}, best_model_path=PATH_BESTMODEL)
+    TRAINED_MODEL, TRAIN_HISTORY = Model_Train(
+        MODEL, inputs, N_EPOCHS, {"enable": False}, 
+        best_model_path=PATH_BESTMODEL
+    )
 
     # Load Best Model
     TRAINED_MODEL = Model_LoadModel(PATH_BESTMODEL)
@@ -102,8 +105,7 @@ def Model_Sweep_Run(config_data):
     loss_test, eval_test, eval_test_inference = Model_Test(
         TRAINED_MODEL, DATASET_ENCODED_TEST,
         target_chars=DATASET_ENCODED_TEST["chars"]["target_chars"],
-        target_char_map=DATASET_ENCODED_TEST["chars"]["target_char_map"],
-        use_attention=USE_ATTENTION
+        target_char_map=DATASET_ENCODED_TEST["chars"]["target_char_map"]
     )
     print("MODEL TEST:")
     print("Loss:", loss_test)
@@ -159,7 +161,7 @@ def Runner_Train(args):
             "dropout": args.dropout,
 
             "attention": False,
-            "loss_fn": "categorical_crossentropy"
+            "loss_fn": "sparse_categorical_crossentropy" # "categorical_crossentropy" "sparse_categorical_crossentropy"
     }
     # Run
     Model_Sweep_Run(SWEEP_CONFIG)

@@ -92,7 +92,10 @@ def Model_Sweep_Run(wandb_data):
     MODEL = Model_Compile(MODEL, **inputs["model"]["compile_params"])
 
     # Train Model
-    TRAINED_MODEL, TRAIN_HISTORY = Model_Train(MODEL, inputs, N_EPOCHS, wandb_data, best_model_path=PATH_BESTMODEL)
+    TRAINED_MODEL, TRAIN_HISTORY = Model_Train(
+        MODEL, inputs, N_EPOCHS, wandb_data, 
+        best_model_path=PATH_BESTMODEL
+    )
 
     # Load Best Model
     TRAINED_MODEL = Model_LoadModel(PATH_BESTMODEL)
@@ -104,8 +107,7 @@ def Model_Sweep_Run(wandb_data):
     loss_test, eval_test, eval_test_inference = Model_Test(
         TRAINED_MODEL, DATASET_ENCODED_TEST,
         target_chars=DATASET_ENCODED_TEST["chars"]["target_chars"],
-        target_char_map=DATASET_ENCODED_TEST["chars"]["target_char_map"],
-        use_attention=USE_ATTENTION
+        target_char_map=DATASET_ENCODED_TEST["chars"]["target_char_map"]
     )
 
     # Wandb log test data
@@ -128,7 +130,7 @@ def Model_Sweep_Run(wandb_data):
 #     WANDB_DATA = json.load(open("config.json", "r"))
 #     WANDB_DATA.update({
 #         "attention": False,
-#         "loss_fn": "categorical_crossentropy" # "categorical_crossentropy", sparse_categorical_crossentropy"
+#         "loss_fn": "sparse_categorical_crossentropy" # "categorical_crossentropy", sparse_categorical_crossentropy"
 #     })
 #     # Sweep Setup
 #     SWEEP_CONFIG = {

@@ -118,7 +118,8 @@ def Model_Train(model, inputs, n_epochs, wandb_data, **params):
     '''
     Train Model
     '''
-    OUTPUT_LABEL_ENCODING = False
+    OUTPUT_LABEL_ENCODING = (model.loss.name == "sparse_categorical_crossentropy")
+    print(OUTPUT_LABEL_ENCODING, model.loss.name)
     # Get Data
     DATASET_ENCODED = inputs["dataset_encoded"]
     dataset_train_encoder_input = np.argmax(DATASET_ENCODED["train"]["encoder_input"], axis=-1)
@@ -176,8 +177,8 @@ def Model_Test(model, dataset, **params):
     '''
     Test Model
     '''
-    OUTPUT_LABEL_ENCODING = False
-
+    OUTPUT_LABEL_ENCODING = (model.loss.name == "sparse_categorical_crossentropy")
+    # Get Data
     dataset_test_encoder_input = np.argmax(dataset["encoder_input"], axis=-1)
     dataset_test_decoder_input = np.argmax(dataset["decoder_input"], axis=-1)
     if OUTPUT_LABEL_ENCODING:

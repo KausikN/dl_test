@@ -25,11 +25,11 @@ def Model_Sweep_Run(wandb_data):
     BATCH_SIZE = config.batch_size
 
     ENCODER = config.encoder
-    DECODER = config.decoder
+    DECODER = ENCODER
     ENCODER_EMBEDDING_SIZE = config.encoder_embedding_size
-    DECODER_EMBEDDING_SIZE = config.decoder_embedding_size
+    DECODER_EMBEDDING_SIZE = ENCODER_EMBEDDING_SIZE
     ENCODER_N_UNITS = config.encoder_n_units
-    DECODER_N_UNITS = config.decoder_n_units
+    DECODER_N_UNITS = ENCODER_N_UNITS
     ACT_FUNC = config.act_func
     DROPOUT = config.dropout
     USE_ATTENTION = wandb_data["attention"]
@@ -137,7 +137,7 @@ def Model_Sweep_Run(wandb_data):
 #     # Sweep Setup
 #     SWEEP_CONFIG = {
 #         "name": "test-run-1",
-#         "method": "bayes",
+#         "method": "grid",
 #         "metric": {
 #             "name": "val_accuracy",
 #             "goal": "maximize"
@@ -153,27 +153,27 @@ def Model_Sweep_Run(wandb_data):
 #             "encoder": {
 #                 "values": ["LSTM"]
 #             },
-#             "decoder": {
-#                 "values": ["LSTM"]
-#             },
+#             # "decoder": {
+#             #     "values": ["LSTM"]
+#             # },
 #             "encoder_embedding_size": {
 #                 "values": [64]
 #             },
-#             "decoder_embedding_size": {
-#                 "values": [64]
-#             },
+#             # "decoder_embedding_size": {
+#             #     "values": [64]
+#             # },
 #             "encoder_n_units": {
 #                 "values": [
 #                     [64],
 #                     [64, 64]
 #                 ]
 #             },
-#             "decoder_n_units": {
-#                 "values": [
-#                     [64],
-#                     [64, 64]
-#                 ]
-#             },
+#             # "decoder_n_units": {
+#             #     "values": [
+#             #         [64],
+#             #         [64, 64]
+#             #     ]
+#             # },
 #             "act_func": {
 #                 "values": ["sigmoid", "tanh"]
 #             },

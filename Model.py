@@ -138,7 +138,7 @@ def Model_Train(model, inputs, n_epochs, wandb_data, **params):
         WandbCallbackFunc = WandbCallback(
             monitor="val_accuracy", save_model=True, log_evaluation=True, log_weights=True,
             log_best_prefix="best_",
-            # generator=DATASET["val"], 
+            validation_data=([dataset_val_encoder_input, dataset_val_decoder_input], dataset_val_decoder_output),
             validation_steps=VALIDATION_STEP_SIZE
         )
         callbacks.append(WandbCallbackFunc)

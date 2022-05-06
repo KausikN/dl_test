@@ -32,7 +32,8 @@ def Model_Sweep_Run(wandb_data):
     DECODER_N_UNITS = config.decoder_n_units
     ACT_FUNC = config.act_func
     DROPOUT = config.dropout
-    USE_ATTENTION = False
+    USE_ATTENTION = wandb_data["attention"]
+    LOSS_FN = wandb_data["loss_fn"]
 
     print("RUN CONFIG:")
     pprint(config)
@@ -57,7 +58,9 @@ def Model_Sweep_Run(wandb_data):
                 ],
             }, 
             "compile_params": {
-                "loss_fn": CategoricalCrossentropy(),#SparseCategoricalCrossentropy(),
+                "loss_fn": LOSS_FN,
+                # CategoricalCrossentropy(),
+                # SparseCategoricalCrossentropy(),
                 "optimizer": Adam(),
                 "metrics": ["accuracy"]
             }

@@ -37,6 +37,8 @@ def Model_Sweep_Run(wandb_data):
 
     print("RUN CONFIG:")
     pprint(config)
+    print("OTHER CONFIG:")
+    pprint(wandb_data)
 
     # Get Inputs
     inputs = {

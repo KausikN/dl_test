@@ -7,3 +7,9 @@ tensorflow
 tqdm
 # tqdm==4.62.3
 wandb
+
+# GPT2
+# datasets >= 1.8.0
+# sentencepiece != 0.1.92
+# transformers
+# pyarrow

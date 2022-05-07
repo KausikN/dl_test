@@ -34,10 +34,11 @@ def LyricGen_PreprocessDataset(save_dir="./GPT2/Outputs/"):
 def LyricGen_RunScript(n_epochs=1, batch_size=128, save_dir="./GPT2/Outputs/", model_dir="./GPT2/Models/"):
     savepath_train = os.path.join(save_dir, "train.txt")
     savepath_val = os.path.join(save_dir, "val.txt")
+    model = "gpt2-medium" # gpt2-medium, distilgpt2
     # Form CMD
     CMD = f"""python {SCRIPT_PATH} \
---model_type distilgpt2 \
---model_name_or_path distilgpt2 \
+--model_type {model} \
+--model_name_or_path {model} \
 --train_file '{savepath_train}' \
 --do_train \
 --validation_file '{savepath_val}' \
@@ -54,8 +55,8 @@ def LyricGen_LoadModel(model_dir="./GPT2/Models/"):
     '''
     Loads the model for the Lyric Generator
     '''
+    tokenizer = GPT2Tokenizer.from_pretrained("distilgpt2")
     model = TFGPT2LMHeadModel.from_pretrained(model_dir)
-    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     return model, tokenizer
 
 def LyricGen_Generate(model, tokenizer, prompt="I love deep learning", n_songs=1, save_dir="./GPT2/Outputs/"):
@@ -68,10 +69,10 @@ def LyricGen_Generate(model, tokenizer, prompt="I love deep learning", n_songs=1
         input_ids, 
         max_length=150,  
         num_return_sequences=n_songs,
-        no_repeat_ngram_size=2,
+        no_repeat_ngram_size=3,
         repetition_penalty=1.5,
         top_p=0.92,
-        temperature=.85,
+        temperature=0.85,
         do_sample=True,
         top_k=125,
         early_stopping=True

@@ -8,6 +8,8 @@ import numpy as np
 np.random.seed(0)
 import pickle
 import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
 
 # Main Vars
 DATASET_PATH_DAKSHINA = "Dataset/dakshina_dataset_v1.0"
@@ -30,6 +32,7 @@ SYMBOLS = {
     "start": "\t",
     "end": "\n"
 }
+FONT_PATH_TAMIL = "Library/Latha.ttf"
 
 LOAD_SAVED_DATASET = True # Change to False finally
 

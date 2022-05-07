@@ -9,6 +9,8 @@ import functools
 from pprint import pprint
 
 from Model import *
+from Visualise_AttnHeatMap import *
+from Visualise_Connectivity import *
 
 # Main Functions
 # Run Function
@@ -122,7 +124,7 @@ def Runner_ParseArgs():
     
     parser = argparse.ArgumentParser(description="Training and Testing for DL Assignment 3")
 
-    parser.add_argument("--mode", "-m", type=str, default="train", help="train | test")
+    parser.add_argument("--mode", "-m", type=str, default="train", help="train | test | vh | vc")
     parser.add_argument("--model", "-ml", type=str, default="Models/Model.h5", help="Model path to use or save to")
     parser.add_argument("--dataset", "-dt", type=str, default=DATASET_PATH_DAKSHINA_TAMIL, help="Dataset path to use")
 
@@ -191,6 +193,32 @@ def Runner_Test(args):
     print("Accuracy:", eval_test)
     print("Accuracy Inference:", eval_test_inference)
 
+def Runner_VisAttnHeatMap(args):
+    '''
+    Visualize Attention HeatMap
+    '''
+    # Load Model
+    TRAINED_MODEL = Model_LoadModel(args.model)
+    # Get Test Dataset
+    DATASET_TEST, DATASET_ENCODED_TEST = LoadTestDataset_Dakshina(
+        DATASET_PATH_DAKSHINA_TAMIL
+    )
+    # Plot HeatMap
+    Vis_AttnHeatMap(TRAINED_MODEL, DATASET_TEST, DATASET_ENCODED_TEST, 9)
+
+def Runner_VisConnectivity(args):
+    '''
+    Visualize Connectivity
+    '''
+    # Load Model
+    TRAINED_MODEL = Model_LoadModel(args.model)
+    # Get Test Dataset
+    DATASET_TEST, DATASET_ENCODED_TEST = LoadTestDataset_Dakshina(
+        DATASET_PATH_DAKSHINA_TAMIL
+    )
+    # Plot Connectivity
+    Vis_Connectivity(TRAINED_MODEL, DATASET_TEST, DATASET_ENCODED_TEST, 1)
+
 # Run
 if __name__ == "__main__":
     # Parse Args
@@ -200,5 +228,9 @@ if __name__ == "__main__":
         Runner_Train(ARGS)
     elif ARGS.mode == "test":
         Runner_Test(ARGS)
+    elif ARGS.mode == "vh":
+        Runner_VisAttnHeatMap(ARGS)
+    elif ARGS.mode == "vc":
+        Runner_VisConnectivity(ARGS)
     else:
         print("Invalid Mode!")

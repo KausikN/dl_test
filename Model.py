@@ -102,8 +102,8 @@ def Model_EncoderDecoderBlocks(X_shape, Y_shape, Blocks, **params):
         #     DATASET_DAKSHINA_TAMIL_UNIQUE_CHARS["target"]+1, activation="softmax", name="decoder_dense"
         # )(att_vector)
         decoder_outputs = TimeDistributed(Dense(
-            DATASET_DAKSHINA_TAMIL_UNIQUE_CHARS["target"]+1, activation="softmax", name="decoder_dense"
-        ))(att_vector)
+            DATASET_DAKSHINA_TAMIL_UNIQUE_CHARS["target"]+1, activation="softmax"
+        ), name="decoder_dense")(att_vector)
     else:
         # Output Layer
         decoder_outputs = Dense(
@@ -222,7 +222,7 @@ def Model_Test(model, dataset, **params):
         # Inputs
         words = dataset_test_encoder_input[i:i+batch_size]
         # Results
-        decoded_words = Model_Inference_Transliterate(words, encoder_model, decoder_model, **params)
+        decoded_words, _ = Model_Inference_Transliterate(words, encoder_model, decoder_model, **params)
         outputs = outputs + decoded_words
 
     # Remove SOS and EOS
@@ -369,6 +369,7 @@ def Model_Inference_Transliterate(words, model_encoder, model_decoder, **params)
     target_sequence = np.argmax(target_sequence, axis=-1)
 
     decoded_words = [""]*batch_size
+    attentions = []
     for i in range(DATASET_DAKSHINA_TAMIL_MAX_CHARS["target"]):
         decoder_inputs = [target_sequence]
         for s in encoded_states: decoder_inputs.append(s)
@@ -377,7 +378,9 @@ def Model_Inference_Transliterate(words, model_encoder, model_decoder, **params)
         decoded_data = model_decoder.predict(decoder_inputs)
         output_tokens = decoded_data[0]
         decoded_states = decoded_data[1:]
-        if params["use_attention"]: decoded_states = decoded_states[:-1] # Ignore the Attn States
+        if params["use_attention"]:
+            attentions.append(decoded_data[-1])
+            decoded_states = decoded_states[:-1] # Ignore the Attn States
 
         # Get predicted character and update target sequence
         char_pred = np.argmax(output_tokens[:, -1, :], axis=1)
@@ -393,4 +396,4 @@ def Model_Inference_Transliterate(words, model_encoder, model_decoder, **params)
     # Remove EOS
     decoded_words = [word[:word.find(SYMBOLS["end"])] for word in decoded_words]
     
-    return decoded_words
+    return decoded_words, attentions

@@ -67,9 +67,9 @@ def LyricGen_Generate(model, tokenizer, prompt="I love deep learning", n_songs=1
     # Generate
     lyrics = model.generate(
         input_ids, 
-        max_length=150,  
+        max_length=250,  
         num_return_sequences=n_songs,
-        no_repeat_ngram_size=3,
+        no_repeat_ngram_size=4,
         repetition_penalty=1.5,
         top_p=0.92,
         temperature=0.85,
@@ -85,7 +85,7 @@ def LyricGen_Generate(model, tokenizer, prompt="I love deep learning", n_songs=1
     fileLines = []
     for i, song_data in enumerate(lyrics):
         fileLines.append("{}: {}\n".format(i, tokenizer.decode(song_data, skip_special_tokens=True)))
-    open(os.path.join(save_dir, "gen_lyrics.txt"), "w").write("\n".join(fileLines))
+    open(os.path.join(save_dir, "gen_lyrics.txt"), "w", encoding="utf-8").write("\n".join(fileLines))
 
 # Runner Functions
 def Runner_ParseArgs():

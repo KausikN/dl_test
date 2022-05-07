@@ -205,6 +205,7 @@ def Model_Test(model, dataset, **params):
     print(dataset_test_decoder_output.shape)
     
     # Test Model - Charecter Level
+    # loss_test, eval_test = 0.0, 0.0
     loss_test, eval_test = model.evaluate(
         [dataset_test_encoder_input, dataset_test_decoder_input], 
         dataset_test_decoder_output, 
@@ -283,6 +284,9 @@ def Model_Inference_GetEncoderDecoder(model, **params):
     # Get Encoder Model which gives cell states as output
     model_encoder = Model(encoder_inputs, encoder_states)
 
+    # print("Encoder Inputs:", len(encoder_inputs))
+    print("Encoder Outputs:", len(encoder_states))
+
     # Decoder Input
     decoder_inputs = model.input[1]
 
@@ -310,7 +314,8 @@ def Model_Inference_GetEncoderDecoder(model, **params):
                 li = int(name.lstrip("decoder_block_").split("_")[0])
                 n_cells = layer.output_shape[0][-1]
                 decoder_data[li] = [layer]
-                state_count = len(encoder_data[li])-1 if params["use_attention"] else len(encoder_data[li])
+                # state_count = len(encoder_data[li])-1 if params["use_attention"] else len(encoder_data[li])
+                state_count = len(encoder_data[li])-1
                 for i in range(state_count):
                     decoder_data[li].append(Input(shape=(n_cells,)))
     # Decoder Layers
@@ -348,6 +353,9 @@ def Model_Inference_GetEncoderDecoder(model, **params):
     do = [decoder_outputs]
     for s in decoder_states_outputs: do.append(s)
     model_decoder = Model(di, do)
+
+    print("Decoder Inputs:", len(di))
+    print("Decoder Outputs:", len(do))
     
     return model_encoder, model_decoder
 
@@ -374,7 +382,7 @@ def Model_Inference_Transliterate(words, model_encoder, model_decoder, **params)
         decoder_inputs = [target_sequence]
         for s in encoded_states: decoder_inputs.append(s)
         
-        # print("Decoder Inp:", target_sequence.shape)
+        # print("DecoderInp:", len(decoder_inputs))
         decoded_data = model_decoder.predict(decoder_inputs)
         output_tokens = decoded_data[0]
         decoded_states = decoded_data[1:]
@@ -383,7 +391,7 @@ def Model_Inference_Transliterate(words, model_encoder, model_decoder, **params)
             decoded_states = decoded_states[:-1] # Ignore the Attn States
 
         # Get predicted character and update target sequence
-        char_pred = np.argmax(output_tokens[:, -1, :], axis=1)
+        char_pred = np.argmax(output_tokens[:, -1, :], axis=-1)
         target_sequence = np.zeros((batch_size, 1, DATASET_DAKSHINA_TAMIL_UNIQUE_CHARS["target"]+1))
         for j in range(char_pred.shape[0]):
             ci = char_pred[j]
@@ -391,7 +399,9 @@ def Model_Inference_Transliterate(words, model_encoder, model_decoder, **params)
             target_sequence[j, 0, ci] = 1.0
         target_sequence = np.argmax(target_sequence, axis=-1)
         # Update states
-        encoded_states = [encoded_states[0]] + decoded_states
+        encoded_states_new = []
+        if params["use_attention"]: encoded_states_new = [encoded_states[0]]
+        encoded_states = encoded_states_new + decoded_states
 
     # Remove EOS
     decoded_words = [word[:word.find(SYMBOLS["end"])] for word in decoded_words]

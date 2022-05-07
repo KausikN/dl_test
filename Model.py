@@ -14,7 +14,8 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 import tensorflow.keras as TFKeras
 from tqdm import tqdm
 
-from Library.AttentionBlock import *
+# from Library.AttentionBlock import *
+from Library.BahdanauAttention import *
 from Library.ModelBlocks import *
 from Dataset import *
 
@@ -37,7 +38,6 @@ def Model_EncoderDecoderBlocks(X_shape, Y_shape, Blocks, **params):
     # Input Layer
     print("X_shape:", X_shape)
     print("Y_shape:", Y_shape)
-    # encoder_input = Input(shape=(X_shape[1],), name="encoder_input")
     encoder_input = Input(shape=(None,), name="encoder_input")
     print("Encoder Input:", encoder_input.shape)
     encoder_embedding = Embedding(
@@ -60,7 +60,6 @@ def Model_EncoderDecoderBlocks(X_shape, Y_shape, Blocks, **params):
     
     # Decoder
     # Input Layer
-    # decoder_input = Input(shape=(Y_shape[1],), name="decoder_input")
     decoder_input = Input(shape=(None,), name="decoder_input")
     print("Decoder Input:", decoder_input.shape)
     decoder_embedding = Embedding(
@@ -78,20 +77,29 @@ def Model_EncoderDecoderBlocks(X_shape, Y_shape, Blocks, **params):
         decoderData.append(Blocks["decoder"][i](decoder_outputs, initial_state, block_name="decoder_block_" + str(i)))
         decoder_outputs = decoderData[-1]["output"]
         print("Decoder Block:", i, decoder_outputs.shape)
-
     
     if params["use_attention"]:
         # Attention Layer
-        print(encoderData[-1]["output"])
-        print(decoderData[-1]["output"])
-        att_output, att_states = AttentionLayer(name="attention")([encoderData[-1]["output"], decoderData[-1]["output"]], verbose=True)
-        # att_output, att_states = Attention(name="attention")([encoderData[-1]["output"], decoderData[-1]["output"]])
+        print("Encoder Output:", encoderData[-1]["output"])
+        print("Decoder Output:", decoderData[-1]["output"])
+        att_output, att_states = BahdanauAttention(params["attn_n_units"], name="attention")(
+            query=decoderData[-1]["output"],
+            value=encoderData[-1]["output"]
+            # mask=tf.ones(tf.shape(decoderData[-1]["output"])[:-1], dtype=bool)
+        )
+        print("Attention Output:", att_output.shape)
         # Concat Layer
-        decoder_concat_input = Concatenate(axis=-1, name="concat")([decoderData[-1]["output"], att_output])
+        decoder_concat_input = tf.concat([att_output, decoderData[-1]["output"]], axis=-1, name="concat")
+        print("Decoder Concat Input:", decoder_concat_input.shape)
+        # Dense Layer
+        att_vector = Dense(
+            params["attn_n_units"], activation="tanh", use_bias=False, name="attention_vector"
+        )(decoder_concat_input)
+        print("Attention Vector:", att_vector.shape)
         # Output Layer
-        decoder_outputs = TimeDistributed(Dense(
+        decoder_outputs = Dense(
             DATASET_DAKSHINA_TAMIL_UNIQUE_CHARS["target"]+1, activation="softmax", name="decoder_dense"
-        ))(decoder_concat_input)
+        )(att_vector)
     else:
         # Output Layer
         decoder_outputs = Dense(
@@ -143,7 +151,6 @@ def Model_Train(model, inputs, n_epochs, wandb_data, **params):
         WandbCallbackFunc = WandbCallback(
             monitor="val_accuracy", save_model=True, log_evaluation=True, log_weights=True,
             log_best_prefix="best_",
-            # validation_data=(dataset_val_encoder_input, dataset_val_decoder_output),
             # validation_data=([dataset_val_encoder_input, dataset_val_decoder_input], dataset_val_decoder_output),
             validation_steps=VALIDATION_STEP_SIZE
         )
@@ -236,7 +243,7 @@ def Model_LoadModel(path):
     '''
     Load Model
     '''
-    return load_model(path)
+    return load_model(path, custom_objects={"BahdanauAttention": BahdanauAttention})
 
 def Model_SaveModel(model, path):
     '''
@@ -259,8 +266,6 @@ def Model_Inference_GetEncoderDecoder(model, **params):
         name = str(layer.name)
         if name.startswith("encoder_block_"):
             li = int(name.lstrip("encoder_block_").split("_")[0])
-            # _, enc_h, enc_c = layer.output
-            # encoder_data[li] = [enc_h, enc_c]
             out_data = layer.output
             encoder_data[li] = out_data[1:]
 
@@ -277,7 +282,7 @@ def Model_Inference_GetEncoderDecoder(model, **params):
     decoder_data = {}
     decoders = []
     decoder_states = []
-    attention_layer, concat_layer, decoder_hidden_state_inputs = None, None, None
+    attention_layer, concat_layer, attention_dense_layer, decoder_hidden_state_inputs = None, None, None, None
     decoder_dense, decoder_embedding_layer = None, None
     for layer in model.layers:
         if layer.name =="decoder_dense":
@@ -289,39 +294,39 @@ def Model_Inference_GetEncoderDecoder(model, **params):
             decoder_hidden_state_inputs = Input(shape=(None, n_cells))
         elif layer.name == "concat":
             concat_layer = layer
+        elif layer.name == "attention_vector":
+            attention_dense_layer = layer
         else:
             name = str(layer.name)
             if name.startswith("decoder_block_"):
                 li = int(name.lstrip("decoder_block_").split("_")[0])
                 n_cells = layer.output_shape[0][-1]
-                # dec_h = Input(shape=(n_cells,))
-                # dec_c = Input(shape=(n_cells,))
-                # decoder_data[li] = [layer, dec_h, dec_c]
                 decoder_data[li] = [layer]
                 for i in range(len(encoder_data[li])):
                     decoder_data[li].append(Input(shape=(n_cells,)))
     # Decoder Layers
     for i in list(sorted(decoder_data.keys())):
         decoders.append(decoder_data[i][0])
-        # decoder_states.append([decoder_data[i][1], decoder_data[i][2]])
         decoder_states.append(decoder_data[i][1:])
 
     decoder_outputs = decoder_embedding_layer(decoder_inputs)
     decoder_states_outputs = []
 
     for i in range(len(decoders)):
-        # decoder_outputs, h, c = decoders[i](decoder_outputs, initial_state=decoder_states[i])
-        # decoder_states_outputs.extend([h, c])
         out_data = decoders[i](decoder_outputs, initial_state=decoder_states[i])
         decoder_outputs = out_data[0]
         decoder_states_outputs.extend(out_data[1:])
 
     if params["use_attention"]:
         # Attention Layer
-        att_output_inf, att_states_inf = attention_layer([decoder_hidden_state_inputs, decoder_outputs])
+        # att_output_inf, att_states_inf = attention_layer([decoder_hidden_state_inputs, decoder_outputs])
+        att_output_inf, att_states_inf = attention_layer(query=decoder_outputs, value=decoder_hidden_state_inputs)
         decoder_states_outputs.append(att_states_inf)
         # Concat Layer
-        decoder_outputs = concat_layer([decoder_outputs, att_output_inf])
+        # decoder_outputs = concat_layer([decoder_outputs, att_output_inf])
+        decoder_concat_output = concat_layer([att_output_inf, decoder_outputs])
+        # Dense Layer
+        decoder_outputs = attention_dense_layer(decoder_concat_output)
 
     # Softmax layer
     decoder_outputs = decoder_dense(decoder_outputs)
@@ -356,8 +361,6 @@ def Model_Inference_Transliterate(words, model_encoder, model_decoder, **params)
     for i in range(DATASET_DAKSHINA_TAMIL_MAX_CHARS["target"]):
         decoder_inputs = [target_sequence]
         for s in encoded_states: decoder_inputs.append(s)
-        # print(len(decoder_inputs))
-        # print([decoder_inputs[j].shape for j in range(len(decoder_inputs))])
         
         # print("Decoder Inp:", target_sequence.shape)
         decoded_data = model_decoder.predict(decoder_inputs)

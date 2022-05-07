@@ -20,7 +20,7 @@ DATASET_PATH_DAKSHINA_TAMIL_PROCESSED = "Dataset/dakshina_processed/ta/"
 DATASET_DAKSHINA_TAMIL_CLASSES = ["target", "input", "rel"]
 DATASET_DAKSHINA_TAMIL_MAX_CHARS = {
     "input": 32,
-    "target": 28,
+    "target": 32, # 28,
 }
 DATASET_DAKSHINA_TAMIL_UNIQUE_CHARS = {
     "input": 28,

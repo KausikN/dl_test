@@ -31,6 +31,7 @@ def Model_Sweep_Run(config_data):
     DROPOUT = config["dropout"]
     USE_ATTENTION = config["attention"]
     LOSS_FN = config["loss_fn"]
+    ATTENTION_N_UNITS = ENCODER_N_UNITS[-1]
 
     print("RUN CONFIG:")
     pprint(config)
@@ -43,7 +44,7 @@ def Model_Sweep_Run(config_data):
                     functools.partial(BLOCKS_ENCODER[ENCODER], 
                         n_units=ENCODER_N_UNITS[i], activation=ACT_FUNC, 
                         dropout=DROPOUT, recurrent_dropout=DROPOUT, 
-                        return_state=True, return_sequences=True#(i < (len(ENCODER_N_UNITS)-1)), 
+                        return_state=True, return_sequences=True,#(i < (len(ENCODER_N_UNITS)-1)), 
                     ) for i in range(len(ENCODER_N_UNITS))
                 ],
                 "decoder": [
@@ -84,7 +85,8 @@ def Model_Sweep_Run(config_data):
         decoder={
             "embedding_size": DECODER_EMBEDDING_SIZE
         },
-        use_attention=USE_ATTENTION
+        use_attention=USE_ATTENTION,
+        attn_n_units=ATTENTION_N_UNITS
     )
     MODEL = Model_Compile(MODEL, **inputs["model"]["compile_params"])
 
@@ -100,7 +102,6 @@ def Model_Sweep_Run(config_data):
     DATASET_TEST, DATASET_ENCODED_TEST = LoadTestDataset_Dakshina(
         DATASET_PATH_DAKSHINA_TAMIL
     )
-
     # Test Best Model
     loss_test, eval_test, eval_test_inference = Model_Test(
         TRAINED_MODEL, DATASET_ENCODED_TEST,
@@ -127,14 +128,14 @@ def Runner_ParseArgs():
 
     # Train Args
     parser.add_argument("--epochs", "-e", type=int, default=1, help="Number of epochs to train")
-    parser.add_argument("--batch_size", "-b", type=int, default=64, help="Batch size")
+    parser.add_argument("--batch_size", "-b", type=int, default=128, help="Batch size")
 
     parser.add_argument("--encoder", "-en", type=str, default="LSTM", help="Encoder type")
     parser.add_argument("--decoder", "-de", type=str, default="LSTM", help="Decoder type")
-    parser.add_argument("--encoder_embedding_size", "-es", type=int, default=128, help="Encoder embedding size")
-    parser.add_argument("--decoder_embedding_size", "-des", type=int, default=128, help="Decoder embedding size")
-    parser.add_argument("--encoder_n_units", "-eu", type=str, default="128", help="Encoder Num units")
-    parser.add_argument("--decoder_n_units", "-du", type=str, default="128", help="Decoder Num units")
+    parser.add_argument("--encoder_embedding_size", "-es", type=int, default=2, help="Encoder embedding size")
+    parser.add_argument("--decoder_embedding_size", "-des", type=int, default=2, help="Decoder embedding size")
+    parser.add_argument("--encoder_n_units", "-eu", type=str, default="2", help="Encoder Num units")
+    parser.add_argument("--decoder_n_units", "-du", type=str, default="2", help="Decoder Num units")
     parser.add_argument("--act_func", "-af", type=str, default="tanh", help="Activation function")
     parser.add_argument("--dropout", "-d", type=float, default=0.2, help="Dropout")
 

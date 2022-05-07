@@ -13,6 +13,7 @@ from tensorflow.keras.metrics import CategoricalAccuracy, SparseCategoricalAccur
 from tensorflow.keras.callbacks import ModelCheckpoint
 import tensorflow.keras as TFKeras
 from tqdm import tqdm
+from tensorflow.keras.utils import plot_model
 
 # from Library.AttentionBlock import *
 from Library.BahdanauAttention import *
@@ -89,7 +90,7 @@ def Model_EncoderDecoderBlocks(X_shape, Y_shape, Blocks, **params):
         )
         print("Attention Output:", att_output.shape)
         # Concat Layer
-        decoder_concat_input = tf.concat([att_output, decoderData[-1]["output"]], axis=-1, name="concat")
+        decoder_concat_input = tf.concat([att_output, decoderData[-1]["output"]], axis=-1) # , name="concat")
         print("Decoder Concat Input:", decoder_concat_input.shape)
         # Dense Layer
         att_vector = Dense(
@@ -97,9 +98,12 @@ def Model_EncoderDecoderBlocks(X_shape, Y_shape, Blocks, **params):
         )(decoder_concat_input)
         print("Attention Vector:", att_vector.shape)
         # Output Layer
-        decoder_outputs = Dense(
+        # decoder_outputs = Dense(
+        #     DATASET_DAKSHINA_TAMIL_UNIQUE_CHARS["target"]+1, activation="softmax", name="decoder_dense"
+        # )(att_vector)
+        decoder_outputs = TimeDistributed(Dense(
             DATASET_DAKSHINA_TAMIL_UNIQUE_CHARS["target"]+1, activation="softmax", name="decoder_dense"
-        )(att_vector)
+        ))(att_vector)
     else:
         # Output Layer
         decoder_outputs = Dense(
@@ -184,8 +188,11 @@ def Model_Test(model, dataset, **params):
     '''
     Test Model
     '''
-    OUTPUT_LABEL_ENCODING = (model.loss.name == "sparse_categorical_crossentropy")
+    # Plot Model Data
+    print(model.summary())
+    # plot_model(model, to_file="Outputs/model_plot.png", show_shapes=True, show_layer_names=True)
     # Get Data
+    OUTPUT_LABEL_ENCODING = (model.loss.name == "sparse_categorical_crossentropy")
     dataset_test_encoder_input = np.argmax(dataset["encoder_input"], axis=-1)
     dataset_test_decoder_input = np.argmax(dataset["decoder_input"], axis=-1)
     if OUTPUT_LABEL_ENCODING:
@@ -267,10 +274,11 @@ def Model_Inference_GetEncoderDecoder(model, **params):
         if name.startswith("encoder_block_"):
             li = int(name.lstrip("encoder_block_").split("_")[0])
             out_data = layer.output
-            encoder_data[li] = out_data[1:]
+            encoder_data[li] = out_data
 
+    if params["use_attention"]: encoder_states.append(encoder_data[list(sorted(encoder_data.keys()))[-1]][0])
     for i in list(sorted(encoder_data.keys())):
-        encoder_states.extend(encoder_data[i])
+        encoder_states.extend(encoder_data[i][1:])
 
     # Get Encoder Model which gives cell states as output
     model_encoder = Model(encoder_inputs, encoder_states)
@@ -292,7 +300,7 @@ def Model_Inference_GetEncoderDecoder(model, **params):
         elif layer.name == "attention":
             attention_layer = layer
             decoder_hidden_state_inputs = Input(shape=(None, n_cells))
-        elif layer.name == "concat":
+        elif layer.name in ["concat", "tf.concat"]:
             concat_layer = layer
         elif layer.name == "attention_vector":
             attention_dense_layer = layer
@@ -302,7 +310,8 @@ def Model_Inference_GetEncoderDecoder(model, **params):
                 li = int(name.lstrip("decoder_block_").split("_")[0])
                 n_cells = layer.output_shape[0][-1]
                 decoder_data[li] = [layer]
-                for i in range(len(encoder_data[li])):
+                state_count = len(encoder_data[li])-1 if params["use_attention"] else len(encoder_data[li])
+                for i in range(state_count):
                     decoder_data[li].append(Input(shape=(n_cells,)))
     # Decoder Layers
     for i in list(sorted(decoder_data.keys())):
@@ -324,7 +333,7 @@ def Model_Inference_GetEncoderDecoder(model, **params):
         decoder_states_outputs.append(att_states_inf)
         # Concat Layer
         # decoder_outputs = concat_layer([decoder_outputs, att_output_inf])
-        decoder_concat_output = concat_layer([att_output_inf, decoder_outputs])
+        decoder_concat_output = concat_layer([att_output_inf, decoder_outputs], axis=-1)
         # Dense Layer
         decoder_outputs = attention_dense_layer(decoder_concat_output)
 
@@ -333,7 +342,8 @@ def Model_Inference_GetEncoderDecoder(model, **params):
     # Create the decoder model
     decoder_states_inputs = []
     for i in range(len(decoder_states)): decoder_states_inputs.extend(decoder_states[i])
-    di = [decoder_inputs, decoder_hidden_state_inputs] if params["use_attention"] else [decoder_inputs]
+    di = [decoder_inputs]
+    if params["use_attention"]: di.append(decoder_hidden_state_inputs)
     for s in decoder_states_inputs: di.append(s)
     do = [decoder_outputs]
     for s in decoder_states_outputs: do.append(s)
@@ -348,9 +358,10 @@ def Model_Inference_Transliterate(words, model_encoder, model_decoder, **params)
     batch_size = words.shape[0]
     # Encode the input string
     encoded_states = model_encoder.predict(words)
-    encoded_states = np.array(encoded_states)
-    if encoded_states.ndim == 2:
-        encoded_states = np.reshape(encoded_states, (1, encoded_states.shape[0], encoded_states.shape[1]))
+    # encoded_states = np.array(encoded_states)
+    # if encoded_states.ndim == 2:
+    #     encoded_states = np.reshape(encoded_states, (1, encoded_states.shape[0], encoded_states.shape[1]))
+    # print(encoded_states.shape)
 
     target_sequence = np.zeros((batch_size, 1, DATASET_DAKSHINA_TAMIL_UNIQUE_CHARS["target"]+1))
     # Set SOS
@@ -377,7 +388,7 @@ def Model_Inference_Transliterate(words, model_encoder, model_decoder, **params)
             target_sequence[j, 0, ci] = 1.0
         target_sequence = np.argmax(target_sequence, axis=-1)
         # Update states
-        encoded_states = decoded_states
+        encoded_states = [encoded_states[0]] + decoded_states
 
     # Remove EOS
     decoded_words = [word[:word.find(SYMBOLS["end"])] for word in decoded_words]

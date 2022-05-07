@@ -143,7 +143,7 @@ def Model_Sweep_Run(wandb_data):
 #     })
 #     # Sweep Setup
 #     SWEEP_CONFIG = {
-#         "name": "test-run-1",
+#         "name": "lstm-att-run-best-1",
 #         "method": "grid",
 #         "metric": {
 #             "name": "val_accuracy",
@@ -151,41 +151,39 @@ def Model_Sweep_Run(wandb_data):
 #         },
 #         "parameters": {
 #             "n_epochs": {
-#                 "values": [10]
+#                 "values": [1] # 10
 #             },
 #             "batch_size": {
-#                 "values": [128, 256]
+#                 "values": [64] # 64
 #             },
 
 #             "encoder": {
 #                 "values": ["LSTM"]
 #             },
-#             # "decoder": {
-#             #     "values": ["LSTM"]
-#             # },
+#     #         "decoder": {
+#     #             "values": ["LSTM"]
+#     #         },
 #             "encoder_embedding_size": {
-#                 "values": [64]
+#                 "values": [512] # 128, 256, 512
 #             },
-#             # "decoder_embedding_size": {
-#             #     "values": [64]
-#             # },
+#     #         "decoder_embedding_size": {
+#     #             "values": [128, 256, 512] # 128, 256, 512
+#     #         },
 #             "encoder_n_units": {
 #                 "values": [
-#                     [64],
-#                     [64, 64]
+#                     [256, 256, 256] # [256], [256, 256], [256, 256, 256]
 #                 ]
 #             },
-#             # "decoder_n_units": {
-#             #     "values": [
-#             #         [64],
-#             #         [64, 64]
-#             #     ]
-#             # },
+#     #         "decoder_n_units": {
+#     #             "values": [
+#     #                 [256], [256, 256], [256, 256, 256] # [256], [256, 256], [256, 256, 256]
+#     #             ]
+#     #         },
 #             "act_func": {
-#                 "values": ["sigmoid", "tanh"]
+#                 "values": ["tanh"] # sigmoid, tanh
 #             },
 #             "dropout": {
-#                 "values": [0.1, 0.2]
+#                 "values": [0.1] # 0.1, 0.2
 #             }
 #         }
 #     }

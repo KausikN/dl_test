@@ -93,14 +93,12 @@ def Model_EncoderDecoderBlocks(X_shape, Y_shape, Blocks, **params):
         decoder_concat_input = tf.concat([att_output, decoderData[-1]["output"]], axis=-1) # , name="concat")
         print("Decoder Concat Input:", decoder_concat_input.shape)
         # Dense Layer
-        att_vector = Dense(
-            params["attn_n_units"], activation="tanh", use_bias=False, name="attention_vector"
-        )(decoder_concat_input)
+        # att_vector = Dense(
+        #     params["attn_n_units"], activation="tanh", use_bias=False, name="attention_vector"
+        # )(decoder_concat_input)
+        att_vector = decoder_concat_input ##### TODO: Check if this is correct
         print("Attention Vector:", att_vector.shape)
         # Output Layer
-        # decoder_outputs = Dense(
-        #     DATASET_DAKSHINA_TAMIL_UNIQUE_CHARS["target"]+1, activation="softmax", name="decoder_dense"
-        # )(att_vector)
         decoder_outputs = TimeDistributed(Dense(
             DATASET_DAKSHINA_TAMIL_UNIQUE_CHARS["target"]+1, activation="softmax"
         ), name="decoder_dense")(att_vector)
@@ -340,7 +338,8 @@ def Model_Inference_GetEncoderDecoder(model, **params):
         # decoder_outputs = concat_layer([decoder_outputs, att_output_inf])
         decoder_concat_output = concat_layer([att_output_inf, decoder_outputs], axis=-1)
         # Dense Layer
-        decoder_outputs = attention_dense_layer(decoder_concat_output)
+        # decoder_outputs = attention_dense_layer(decoder_concat_output)
+        decoder_outputs = decoder_concat_output ##### TODO: Check if this is correct
 
     # Softmax layer
     decoder_outputs = decoder_dense(decoder_outputs)

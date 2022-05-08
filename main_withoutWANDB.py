@@ -219,7 +219,7 @@ def Runner_VisConnectivity(args):
         DATASET_PATH_DAKSHINA_TAMIL
     )
     # Plot Connectivity
-    Vis_Connectivity(TRAINED_MODEL, DATASET_TEST, DATASET_ENCODED_TEST, 1)
+    Vis_Connectivity(TRAINED_MODEL, DATASET_TEST, DATASET_ENCODED_TEST, 5)
 
 # Run
 if __name__ == "__main__":

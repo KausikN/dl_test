@@ -263,7 +263,7 @@ def Model_Test(model, dataset, **params):
         }
         predictions_df = pd.DataFrame(predictions)
         fname = "vanilla" if not params["use_attention"] else "attention"
-        predictions_df.to_csv(f"Outputs/predictions_{fname}.csv", index=False)
+        predictions_df.to_csv(f"predictions_{fname}/predictions_{fname}.csv", index=False)
 
     return loss_test, eval_test, eval_test_inference
 

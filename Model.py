@@ -238,7 +238,9 @@ def Model_Test(model, dataset, **params):
     target_words = ["".join([params["target_chars"][ci] for ci in word]) for word in target_words]
     # Remove SOS and EOS
     target_words = [word[:word.find(SYMBOLS["end"])] for word in target_words]
-    # Delete
+
+    # Evaluations
+    # Size Matches
     sizeMatches = np.count_nonzero([len(target_words[i]) == len(outputs[i]) for i in range(len(target_words))])
     print("Size Matches:", sizeMatches, "/", len(target_words), "=", sizeMatches / len(target_words))
     # for i in range(len(outputs)):
@@ -252,6 +254,17 @@ def Model_Test(model, dataset, **params):
     print("Predicted Sizes (Unique):", np.unique(output_shapes))
     print("Predicted Sizes:", np.array(output_shapes))
     eval_test_inference = np.mean(outputs == target_words)
+
+    # Form Predictions CSV
+    # if "dataset_words" in params.keys():
+    #     predictions = {
+    #         "english_word": params["dataset_words"]["input"],
+    #         "true_tamil_word": params["dataset_words"]["target"],
+    #         "predicted_tamil_word": outputs
+    #     }
+    #     predictions_df = pd.DataFrame(predictions)
+    #     fname = "vanilla" if not params["use_attention"] else "attention"
+    #     predictions_df.to_csv(f"Outputs/predictions_{fname}.csv", index=False)
 
     return loss_test, eval_test, eval_test_inference
 

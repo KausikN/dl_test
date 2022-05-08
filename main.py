@@ -121,7 +121,8 @@ def Model_Sweep_Run(wandb_data, config=None):
     loss_test, eval_test, eval_test_inference = Model_Test(
         TRAINED_MODEL, DATASET_ENCODED_TEST,
         target_chars=DATASET_ENCODED_TEST["chars"]["target_chars"],
-        target_char_map=DATASET_ENCODED_TEST["chars"]["target_char_map"]
+        target_char_map=DATASET_ENCODED_TEST["chars"]["target_char_map"],
+        dataset_words=DATASET_TEST
     )
 
     print("MODEL TEST:")
@@ -260,7 +261,8 @@ def Runner_Test(args):
     loss_test, eval_test, eval_test_inference = Model_Test(
         TRAINED_MODEL, DATASET_ENCODED_TEST,
         target_chars=DATASET_ENCODED_TEST["chars"]["target_chars"],
-        target_char_map=DATASET_ENCODED_TEST["chars"]["target_char_map"]
+        target_char_map=DATASET_ENCODED_TEST["chars"]["target_char_map"],
+        dataset_words=DATASET_TEST
     )
     # Display
     print("MODEL TEST:")

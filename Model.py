@@ -15,7 +15,6 @@ import tensorflow.keras as TFKeras
 from tqdm import tqdm
 from tensorflow.keras.utils import plot_model
 
-# from Library.AttentionBlock import *
 from Library.BahdanauAttention import *
 from Library.ModelBlocks import *
 from Dataset import *
@@ -256,15 +255,15 @@ def Model_Test(model, dataset, **params):
     eval_test_inference = np.mean(outputs == target_words)
 
     # Form Predictions CSV
-    # if "dataset_words" in params.keys():
-    #     predictions = {
-    #         "english_word": params["dataset_words"]["input"],
-    #         "true_tamil_word": params["dataset_words"]["target"],
-    #         "predicted_tamil_word": outputs
-    #     }
-    #     predictions_df = pd.DataFrame(predictions)
-    #     fname = "vanilla" if not params["use_attention"] else "attention"
-    #     predictions_df.to_csv(f"Outputs/predictions_{fname}.csv", index=False)
+    if "dataset_words" in params.keys():
+        predictions = {
+            "english_word": params["dataset_words"]["input"],
+            "true_tamil_word": params["dataset_words"]["target"],
+            "predicted_tamil_word": outputs
+        }
+        predictions_df = pd.DataFrame(predictions)
+        fname = "vanilla" if not params["use_attention"] else "attention"
+        predictions_df.to_csv(f"Outputs/predictions_{fname}.csv", index=False)
 
     return loss_test, eval_test, eval_test_inference
 

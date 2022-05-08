@@ -1,5 +1,8 @@
 """
 Attention Block
+
+Reference:
+https://www.tensorflow.org/text/tutorials/nmt_with_attention
 """
 
 # Imports
@@ -17,18 +20,11 @@ class BahdanauAttention(tf.keras.layers.Layer):
         self.attention = tf.keras.layers.AdditiveAttention()
 
     def call(self, query=None, value=None, mask=None):
-        # shape_checker = ShapeChecker()
-        # shape_checker(query, ('batch', 't', 'query_units'))
-        # shape_checker(value, ('batch', 's', 'value_units'))
-        # shape_checker(mask, ('batch', 's'))
-
         # From Eqn. (4), `W1@ht`.
         w1_query = self.W1(query)
-        # shape_checker(w1_query, ('batch', 't', 'attn_units'))
 
         # From Eqn. (4), `W2@hs`.
         w2_key = self.W2(value)
-        # shape_checker(w2_key, ('batch', 's', 'attn_units'))
 
         query_mask = tf.ones(tf.shape(query)[:-1], dtype=bool)
         value_mask = mask if mask is not None else tf.ones(tf.shape(value)[:-1], dtype=bool)
@@ -38,8 +34,6 @@ class BahdanauAttention(tf.keras.layers.Layer):
                 mask=[query_mask, value_mask],
                 return_attention_scores = True,
         )
-        # shape_checker(context_vector, ('batch', 't', 'value_units'))
-        # shape_checker(attention_weights, ('batch', 't', 's'))
 
         return context_vector, attention_weights
 

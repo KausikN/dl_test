@@ -83,10 +83,15 @@ def Model_EncoderDecoderBlocks(X_shape, Y_shape, Blocks, **params):
         # Attention Layer
         print("Encoder Output:", encoderData[-1]["output"])
         print("Decoder Output:", decoderData[-1]["output"])
+
+        zero = tf.constant(0, dtype=tf.float32)
+        mask = tf.not_equal(encoder_input, zero)
+        print("Mask:", mask.shape)
+
         att_output, att_states = BahdanauAttention(params["attn_n_units"], name="attention")(
             query=decoderData[-1]["output"],
-            value=encoderData[-1]["output"]
-            # mask=tf.ones(tf.shape(decoderData[-1]["output"])[:-1], dtype=bool)
+            value=encoderData[-1]["output"],
+            mask=mask
         )
         print("Attention Output:", att_output.shape)
         # Concat Layer
@@ -219,7 +224,8 @@ def Model_Test(model, dataset, **params):
     batch_size = 128
     for i in tqdm(range(0, n, batch_size)):
         # Inputs
-        words = dataset_test_encoder_input[i:i+batch_size]
+        end_i = min(i + batch_size, n)
+        words = dataset_test_encoder_input[i:end_i]
         # Results
         decoded_words, _ = Model_Inference_Transliterate(words, encoder_model, decoder_model, **params)
         outputs = outputs + decoded_words
@@ -232,6 +238,11 @@ def Model_Test(model, dataset, **params):
     target_words = ["".join([params["target_chars"][ci] for ci in word]) for word in target_words]
     # Remove SOS and EOS
     target_words = [word[:word.find(SYMBOLS["end"])] for word in target_words]
+    # Delete
+    sizeMatches = np.count_nonzero([len(target_words[i]) == len(outputs[i]) for i in range(len(target_words))])
+    print("Size Matches:", sizeMatches, "/", len(target_words), "=", sizeMatches / len(target_words))
+    # for i in range(len(outputs)):
+    #     print(i, ":\n", len(outputs[i]), ":", list(outputs[i]), "\n", len(target_words[i]), ":", list(target_words[i]), "\n")
     # Calculate Word Level Accuracy
     outputs = np.array(outputs)
     target_words = np.array(target_words)
@@ -292,6 +303,7 @@ def Model_Inference_GetEncoderDecoder(model, **params):
     decoder_data = {}
     decoders = []
     decoder_states = []
+    mask_layer = None
     attention_layer, concat_layer, attention_dense_layer, decoder_hidden_state_inputs = None, None, None, None
     decoder_dense, decoder_embedding_layer = None, None
     for layer in model.layers:
@@ -299,6 +311,8 @@ def Model_Inference_GetEncoderDecoder(model, **params):
             decoder_dense = layer
         elif layer.name == "decoder_embedding":
             decoder_embedding_layer = layer
+        elif layer.name == "tf.math.not_equal":
+            mask_layer = layer
         elif layer.name == "attention":
             attention_layer = layer
             decoder_hidden_state_inputs = Input(shape=(None, n_cells))
@@ -331,11 +345,13 @@ def Model_Inference_GetEncoderDecoder(model, **params):
 
     if params["use_attention"]:
         # Attention Layer
-        # att_output_inf, att_states_inf = attention_layer([decoder_hidden_state_inputs, decoder_outputs])
-        att_output_inf, att_states_inf = attention_layer(query=decoder_outputs, value=decoder_hidden_state_inputs)
+        att_output_inf, att_states_inf = attention_layer(
+            query=decoder_outputs, 
+            value=decoder_hidden_state_inputs#,
+            # mask=mask_layer.output
+        )
         decoder_states_outputs.append(att_states_inf)
         # Concat Layer
-        # decoder_outputs = concat_layer([decoder_outputs, att_output_inf])
         decoder_concat_output = concat_layer([att_output_inf, decoder_outputs], axis=-1)
         # Dense Layer
         # decoder_outputs = attention_dense_layer(decoder_concat_output)

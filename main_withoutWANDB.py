@@ -130,7 +130,7 @@ def Runner_ParseArgs():
 
     # Train Args
     parser.add_argument("--epochs", "-e", type=int, default=1, help="Number of epochs to train")
-    parser.add_argument("--batch_size", "-b", type=int, default=128, help="Batch size")
+    parser.add_argument("--batch_size", "-b", type=int, default=64, help="Batch size")
 
     parser.add_argument("--encoder", "-en", type=str, default="LSTM", help="Encoder type")
     parser.add_argument("--decoder", "-de", type=str, default="LSTM", help="Decoder type")
@@ -164,7 +164,7 @@ def Runner_Train(args):
             "dropout": args.dropout,
 
             "attention": True,
-            "loss_fn": "categorical_crossentropy" # "categorical_crossentropy" "sparse_categorical_crossentropy"
+            "loss_fn": "sparse_categorical_crossentropy" # "categorical_crossentropy" "sparse_categorical_crossentropy"
     }
     # Run
     Model_Sweep_Run(SWEEP_CONFIG)

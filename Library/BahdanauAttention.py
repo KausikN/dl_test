@@ -16,7 +16,7 @@ class BahdanauAttention(tf.keras.layers.Layer):
 
         self.attention = tf.keras.layers.AdditiveAttention()
 
-    def call(self, query, value, mask=None):
+    def call(self, query=None, value=None, mask=None):
         # shape_checker = ShapeChecker()
         # shape_checker(query, ('batch', 't', 'query_units'))
         # shape_checker(value, ('batch', 's', 'value_units'))
